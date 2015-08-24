@@ -141,10 +141,12 @@ function transform(d) {
 function drawChoropleth(){
 
   queue()
-    .defer(d3.csv, "data/fields.csv")
-    .defer(d3.json, "data/neighborhoods44.json")
+    .defer(d3.csv, "data/fields_usa.csv")
+    .defer(d3.json, "http://eric.clst.org/wupl/Stuff/gz_2010_us_040_00_500k.json")
+    //.defer(d3.csv, "data/usstates.csv")
     .defer(d3.csv, "data/neighborhoods.csv")
-    .defer(d3.csv, "data/source.csv")
+    //.defer(d3.csv, "data/source.csv")
+    //.defer(d3.csv, "https://www.census.gov/popest/data/state/totals/2014/tables/NST-EST2014-04.csv")
     .await(setUpChoropleth);
 
   function setUpChoropleth(error, fields, dc, choropleth, source) {
@@ -159,7 +161,7 @@ function drawChoropleth(){
     });
 
     all_data.dc = {
-      NBH_NAMES: "Washington, DC",
+      NBH_NAMES: "United States of America",
       population_total_val: 619371,
       population_under_18_val: 105291,
       single_mother_families_perc: 0.469,
@@ -169,10 +171,10 @@ function drawChoropleth(){
     displayPopBox();
 
     gmap = new google.maps.Map(d3.select("#content").node(), {
-      zoom: 12,
-      minZoom: 10,
-      maxZoom: 14,
-      center: new google.maps.LatLng(38.89555, -77.01551),
+      zoom: 3,
+      minZoom: 2,
+      maxZoom: 5,
+      center: new google.maps.LatLng(40, -100),
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       streetViewControl: false,
       panControl: false,
