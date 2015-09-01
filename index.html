@@ -27,6 +27,9 @@
     </button>
   </div>
 </div>
+
+
+
 <div class="posrel" style="width: 100%; overflow-x: hidden;">
   <div id="nav-panel" class="posabs">
     <ul class="nav nav-pills nav-stacked layer-toggle-menu">
@@ -82,9 +85,9 @@
           <input id="zoom-box" type="checkbox" checked></input> <label for="zoom-box">Enable Zoom</label>
         </div>
       </div>
-  </div><!-- /#main-container -->
+  <!-- /#main-container -->
   <div id="details" class="panel panel-default">
-    <div class="panel-body">
+    <!-- original "mess up" --> <!-- <div class="panel-body">
       <p class="lead">
         <span id="visualized-metric">Total population in 2014</span><br />
         <span id="visualized-measure">309,347,057</span>
@@ -110,8 +113,36 @@
       </table>
       <h4 class="chart">Demographic Breakdown</h4>
       <div class="chart"></div>
+    </div>-->
+    
+   <!-- attempted rebuild from original DCAction source code -->
+   <div class="panel-body">
+      <p class="lead">
+        <span id="visualized-metric">Total population change</span><br />
+        <span id="visualized-measure">10,098,951</span>
+      </p>
+      <h4 class="neighborhood">United States</h4>
+   </div>
+      <table id="pop-info" class="table table-hover">
+        <tr data-type="population_total_val">
+          <td>Population (total)</td>
+          <td class="count align-right"></td>
+        </tr>
+        <tr data-type="population_under_18_val">
+          <td>Population (under 18)</td>
+          <td class="count align-right"></td>
+        </tr>
+        <tr data-type="single_mother_families_perc">
+          <td>Single mother families</td>
+          <td class="count align-right"></td>
+        </tr>
+        <tr data-type="children_in_poverty_perc">
+          <td>Children in poverty</td>
+          <td class="count align-right"></td>
+        </tr>
+      </table>
     </div>
-  </div> <!-- narrative cards here -->
+  <!-- narrative cards here -->
   <div id="schools_panel" class="panel panel-default hide">
     <button class="btn-danger btn-xs btn-panel-close" id="btnPanelClose">X Close</button>
     <div class="panel-body">

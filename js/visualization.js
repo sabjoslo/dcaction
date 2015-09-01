@@ -86,6 +86,8 @@ var gmap_style=[
 
 var browserSupportsTouch = 'ontouchstart' in document.documentElement;
 
+// $ === document.getElementById()
+
 $(document).ready(function() {
   init();
 }); // end document ready function
@@ -143,10 +145,10 @@ function drawChoropleth(){
   queue()
     .defer(d3.csv, "data/fields_usa.csv")
     .defer(d3.json, "http://eric.clst.org/wupl/Stuff/gz_2010_us_040_00_500k.json")
-    //.defer(d3.csv, "data/usstates.csv")
+    .defer(d3.csv, "data/usstates.csv")
     .defer(d3.csv, "data/neighborhoods.csv")
     //.defer(d3.csv, "data/source.csv")
-    //.defer(d3.csv, "https://www.census.gov/popest/data/state/totals/2014/tables/NST-EST2014-04.csv")
+    .defer(d3.csv, "https://www.census.gov/popest/data/state/totals/2014/tables/NST-EST2014-04.csv")
     .await(setUpChoropleth);
 
   function setUpChoropleth(error, fields, dc, choropleth, source) {
