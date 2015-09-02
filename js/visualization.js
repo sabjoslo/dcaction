@@ -145,29 +145,38 @@ function drawChoropleth(){
   queue()
     .defer(d3.csv, "data/fields_usa.csv")
     .defer(d3.json, "http://eric.clst.org/wupl/Stuff/gz_2010_us_040_00_500k.json")
-    .defer(d3.csv, "data/usstates.csv")
-    .defer(d3.csv, "data/neighborhoods.csv")
+    .defer(d3.csv, "data/usstates.csv") //choropleth
+    //.defer(d3.csv, "data/neighborhoods.csv")
     //.defer(d3.csv, "data/source.csv")
-    .defer(d3.csv, "https://www.census.gov/popest/data/state/totals/2014/tables/NST-EST2014-04.csv")
+    .defer(d3.csv, "https://www.census.gov/popest/data/state/totals/2014/tables/NST-EST2014-04.csv") //source
     .await(setUpChoropleth);
 
   function setUpChoropleth(error, fields, dc, choropleth, source) {
     populateNavPanel(fields);
 
     //clean choropleth data for display.
+    /*original
+    /choropleth_data = choropleth;
+    /source_data = source;
+    /choropleth_data.forEach(function(d) {
+      /all_data[d.gis_id] = d;
+      /choropleth_data[d.gis_id] = +d.population_total;
+    });
+    */
+    
     choropleth_data = choropleth;
     source_data = source;
     choropleth_data.forEach(function(d) {
-      all_data[d.gis_id] = d;
-      choropleth_data[d.gis_id] = +d.population_total;
+      all_data[d.geo_id] = d;
+      	  choropleth_data[d.geo_id] = +d.total_pop;
     });
 
     all_data.dc = {
       NBH_NAMES: "United States of America",
-      population_total_val: 619371,
-      population_under_18_val: 105291,
-      single_mother_families_perc: 0.469,
-      children_in_poverty_perc: 0.287
+      total_pop: 619371,
+      //population_under_18_val: 105291,
+      //single_mother_families_perc: 0.469,
+      //children_in_poverty_perc: 0.287
     };
 
     displayPopBox();
@@ -297,8 +306,8 @@ function drawChoropleth(){
           })
           .on("click", function(d) { highlightNeigborhood(d, false); })
           .style("fill",function(d) {
-            if (currentMetric === null || all_data[d.properties.gis_id][currentMetric] === '0') { return defaultColor; }
-            else { return choro_color(all_data[d.properties.gis_id][currentMetric]); }
+            if (currentMetric === null || all_data[d.properties.geo_id][currentMetric] === '0') { return defaultColor; }
+            else { return choro_color(all_data[d.properties.geo_id][currentMetric]); }
           })
           .style("fill-opacity",0.75);
 
@@ -363,6 +372,7 @@ function populateNavPanel(data) {
   });
 
   // school points
+  
   $(".schools-menu > li").on("click", "a", function(e){
     e.preventDefault();
 
@@ -408,19 +418,19 @@ function changeNeighborhoodData(new_data_column) {
     .domain(jenks.slice(1,-1))
     .range(color_palette);
   choropleth_data.forEach(function(d) {
-    choropleth_data[d.gis_id] = +d[new_data_column];
+    choropleth_data[d.geo_id] = +d[new_data_column];
   });
 
   g.select("#neighborhoods").selectAll("path")
     .transition().duration(600)
     .style("fill", function(d) {
-      if(typeof all_data[d.properties.gis_id] ==="undefined" ||
-        all_data[d.properties.gis_id].population_total < min_population ||
-        !all_data[d.properties.gis_id][new_data_column] ||
-        all_data[d.properties.gis_id][currentMetric] === '0'){
+      if(typeof all_data[d.properties.geo_id] ==="undefined" ||
+        all_data[d.properties.geo_id].population_total < min_population ||
+        !all_data[d.properties.geo_id][new_data_column] ||
+        all_data[d.properties.geo_id][currentMetric] === '0'){
         return defaultColor;
       } else {
-        return choro_color(all_data[d.properties.gis_id][new_data_column]);
+        return choro_color(all_data[d.properties.geo_id][new_data_column]);
       }
     })
     .style("fill-opacity",0.75);
@@ -798,7 +808,7 @@ function displayPopBox(d) {
   }
 
   var $popbox = $("#pop-info"),
-      highlighted = d ? all_data[d.properties.gis_id] : all_data.dc;
+      highlighted = d ? all_data[d.properties.geo_id] : all_data.dc;
 
   d3.select(".neighborhood").html(highlighted.NBH_NAMES);
 
@@ -842,10 +852,10 @@ function highlightNeigborhood(d, isOverlayDraw) {
       .classed("active", centered && function(d) { return d === centered; });
 
     // if d is a neighborhood boundary and clicked
-    if (d && all_data[d.properties.gis_id]){
+    if (d && all_data[d.properties.geo_id]){
       displayPopBox(d);
       //last neighborhood to display in popBox.
-      activeId = d.properties.gis_id;
+      activeId = d.properties.geo_id;
       setVisMetric(activeData, all_data[activeId][activeData]);
       updateChart(all_data[activeId]);
     }
@@ -882,10 +892,10 @@ function hoverNeighborhood(d) {
   //but also keep centered neighborhood path up front
   bringNeighborhoodToFront();
 
-  if (d && all_data[d.properties.gis_id]){
+  if (d && all_data[d.properties.geo_id]){
     displayPopBox(d);
     //last neighborhood to display in popBox.
-    activeId = d.properties.gis_id;
+    activeId = d.properties.geo_id;
 
     if (activeData !== "no_neighborhood_data") {
       setVisMetric(activeData, all_data[activeId][activeData]);
