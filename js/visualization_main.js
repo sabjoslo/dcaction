@@ -5,8 +5,7 @@ var COUNT_SCHOOL_DISPLAY = 3;
 var centered;
 
 var svg, projection, gmapProjection, path, g, gmap;
-var activeId = 'dc',
-    choropleth_data, source_data;
+var activeId = 'dc', choropleth_data, source_data;
 var all_data = {}, activeData = "population_total";
 var min_population = 100;
 var defaultColor = "#aaa";
@@ -16,10 +15,10 @@ var chartWidth = 268, chartHeight = 150;
 var w = chartWidth - chartMargin.left - chartMargin.right;
 var h = chartHeight - chartMargin.top - chartMargin.bottom;
 var scale = d3.scale.linear().domain([0, 1]).range([h, 0]);
-var ord_scale = d3.scale.ordinal().domain(["Under 18", "Over 18"]).range([0, w]);
+var ord_scale = d3.scale.ordinal().domain(["2012-13", "2013-14"]).range([0, w]);
 var color = d3.scale.category20();
 var dotRadius = 4;
-
+var activeYear = "2013-14";
 var currentMetric = null;
 var highlightedNeighborhood = null;
 
@@ -86,8 +85,6 @@ var gmap_style=[
 
 var browserSupportsTouch = 'ontouchstart' in document.documentElement;
 
-// $ === document.getElementById()
-
 $(document).ready(function() {
   init();
 }); // end document ready function
@@ -128,7 +125,7 @@ function init(){
   });
 }
 function resizeContainer(width){
-  var new_height = $(window).width() < 797 ? Math.max($("#content").parent().width() * 0.75, 320) : 600;
+  var new_height = $(window).width() < 797 ? Math.max($("#content").parent().width() * 0.75, 320) : 700;
   $("#content").css({"width":width,"height":new_height});
   $("#nav-panel").css({"height": new_height});
 }
@@ -143,40 +140,26 @@ function transform(d) {
 function drawChoropleth(){
 
   queue()
-    .defer(d3.csv, "data/fields_usa.csv")
-    .defer(d3.json, "http://eric.clst.org/wupl/Stuff/gz_2010_us_040_00_500k.json")
-    .defer(d3.csv, "https://www.census.gov/popest/data/state/asrh/2014/files/SCPRC-EST2014-18+POP-RES.csv") //choropleth
-    //.defer(d3.csv, "data/neighborhoods.csv")
-    //.defer(d3.csv, "data/source.csv")
-    .defer(d3.csv, "data/source_usa.csv") //source
+    .defer(d3.json, "data/states.json")
+    .defer(d3.csv, "data/source_main.csv")
+    .defer(d3.csv, "data/fields_main.csv")
+    .defer(d3.csv, "data/transport_data_m.csv")
     .await(setUpChoropleth);
 
-  function setUpChoropleth(error, fields, dc, choropleth, source) {
-    populateNavPanel(fields);
+  function setUpChoropleth(error, dc, source, fields_main, choropleth) {
+    populateNavPanel(fields_main);
 
     //clean choropleth data for display.
-    /*original
-    /choropleth_data = choropleth;
-    /source_data = source;
-    /choropleth_data.forEach(function(d) {
-      /all_data[d.gis_id] = d;
-      /choropleth_data[d.gis_id] = +d.population_total;
-    });
-    */
-    
     choropleth_data = choropleth;
     source_data = source;
     choropleth_data.forEach(function(d) {
-      all_data[d.geo_id] = d;
-      	  choropleth_data[d.geo_id] = +d.total_pop;
+      all_data[d.gis_id] = d;
+      choropleth_data[d.gis_id] = +d.population_total;
     });
 
     all_data.dc = {
-      NBH_NAMES: "United States of America",
-      total_pop: 619371,
-      //population_under_18_val: 105291,
-      //single_mother_families_perc: 0.469,
-      //children_in_poverty_perc: 0.287
+      state_name: "India",
+      population_total_val: 1210854977,
     };
 
     displayPopBox();
@@ -185,7 +168,7 @@ function drawChoropleth(){
       zoom: 3,
       minZoom: 2,
       maxZoom: 5,
-      center: new google.maps.LatLng(40, -100),
+      center: new google.maps.LatLng(21.8262918,81.3729731),
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       streetViewControl: false,
       panControl: false,
@@ -294,7 +277,7 @@ function drawChoropleth(){
           .data(dc.features)
           .enter().append("path")
           .attr("d", path)
-          .attr("id", function (d) { return "path" + d.properties.NCID; })
+          .attr("id", function (d) { return "path" + d.properties.gis_id; })
           .attr("class", "nbhd")
           .on("mouseover", hoverNeighborhood)
           .on("mouseout", function () {
@@ -306,8 +289,8 @@ function drawChoropleth(){
           })
           .on("click", function(d) { highlightNeigborhood(d, false); })
           .style("fill",function(d) {
-            if (currentMetric === null || all_data[d.properties.geo_id][currentMetric] === '0') { return defaultColor; }
-            else { return choro_color(all_data[d.properties.geo_id][currentMetric]); }
+            if (currentMetric === null || all_data[d.properties.gis_id][currentMetric] === '0') { return defaultColor; }
+            else { return choro_color(all_data[d.properties.gis_id][currentMetric]); }
           })
           .style("fill-opacity",0.75);
 
@@ -317,8 +300,6 @@ function drawChoropleth(){
         if(highlightedNeighborhood) {
           highlightNeigborhood(highlightedNeighborhood, true);
         }
-
-        redrawPoints();
 
         if (hash) { $('a' + hash).click(); }
       };
@@ -343,7 +324,7 @@ function populateNavPanel(data) {
 
     $menu.empty();
 
-    if (type === 'neighborhood') {
+    if (type === 'physical' || type === 'financial') {
       _.chain(fields).groupBy('category').each(function (fields, category) {
         $menu.append(categoryTemplate(category));
         _.forEach(fields, function (field) {
@@ -370,42 +351,11 @@ function populateNavPanel(data) {
       $("#details p.lead").show();
     }
   });
-
-  // school points
-  
-  $(".schools-menu > li").on("click", "a", function(e){
-    e.preventDefault();
-
-    var $$parent = $(this).parent();
-    if ($$parent.hasClass("selected")) {
-      removePoints($(this).attr("id"));
-    } else {
-      drawPoints($(this).attr("id"));
-    }
-    $$parent.toggleClass("selected");
-
-  });
-
-  // other points
-  $(".poi-menu > li").on("click", "a", function(e){
-    e.preventDefault();
-
-    var $$parent = $(this).parent();
-    if ($$parent.hasClass("selected")) {
-      removePoints($(this).attr("id"));
-    } else {
-      $$parent.siblings().each(function () {
-        removePoints($(this).removeClass("selected")
-          .children("a").attr("id"));
-      });
-      drawPoints($(this).attr("id"));
-    }
-    $$parent.toggleClass("selected");
-  });
 }
 
 function changeNeighborhoodData(new_data_column) {
-  var data_values = _.filter(_.map(choropleth_data, function(d){ return parseFloat(d[new_data_column]); }), function(d){ return !isNaN(d); });
+  new_data_column_active = new_data_column + "_" + activeYear;
+  var data_values = _.filter(_.map(choropleth_data, function(d){ return parseFloat(d[new_data_column_active]); }), function(d){ return !isNaN(d); });
   var jenks = _.filter(_.unique(ss.jenks(data_values, 5)), function(d){ return !isNaN(d); });
 
   var color_palette = [ "#9ae3ff", "#45ccff", "#00adef", "#00709a", "#003245"];
@@ -418,25 +368,24 @@ function changeNeighborhoodData(new_data_column) {
     .domain(jenks.slice(1,-1))
     .range(color_palette);
   choropleth_data.forEach(function(d) {
-    choropleth_data[d.geo_id] = +d[new_data_column];
+    choropleth_data[d.gis_id] = +d[new_data_column_active];
   });
 
   g.select("#neighborhoods").selectAll("path")
     .transition().duration(600)
     .style("fill", function(d) {
-      if(typeof all_data[d.properties.geo_id] ==="undefined" ||
-        all_data[d.properties.geo_id].population_total < min_population ||
-        !all_data[d.properties.geo_id][new_data_column] ||
-        all_data[d.properties.geo_id][currentMetric] === '0'){
+      if(typeof all_data[d.properties.gis_id] ==="undefined" ||
+        !all_data[d.properties.gis_id][new_data_column_active] ||
+        all_data[d.properties.gis_id][currentMetric] === '0'){
         return defaultColor;
       } else {
-        return choro_color(all_data[d.properties.geo_id][new_data_column]);
+        return choro_color(all_data[d.properties.gis_id][new_data_column_active]);
       }
     })
     .style("fill-opacity",0.75);
 
   if(activeId && new_data_column !== "no_neighborhood_data") {
-    setVisMetric(new_data_column, all_data[activeId][new_data_column]);
+    setVisMetric(new_data_column, all_data[activeId][new_data_column_active]);
   } else {
     setVisMetric(null, null, true);
     removePoints("clear");
@@ -447,26 +396,34 @@ function changeNeighborhoodData(new_data_column) {
 
   var zeroElement = jenks[0] === 0 && jenks[1] === 1;
 
-  var previousElement = function(n, a){
+  var previousElement = function(n, a){ 
     return _.max(_.filter(a, function(d){ return d < n; } ));
   };
 
-  var legendText = function(d, jenks){
+  var legendText = function(d, jenks){	  
     if(d == _.min(jenks)) {
       if (zeroElement) { return "0"; }
       return "Less than " + legendNumber(d);
     } else if(d > _.max(jenks)){
       return legendNumber(_.max(jenks)) + " and above";
     } else {
-      return legendNumber(previousElement(d, jenks)) + " - " + legendNumber(d);
+      previousNumber = legendNumber(previousElement(d, jenks));
+      if (previousNumber == "Data unavailable"){
+	return "Data unavailable";      
+      } else{	      
+      	return previousNumber + " - " + legendNumber(d);
+      }
     }
   };
 
   var legendNumber = function(d, typeDef){
     var column = String([new_data_column]);
     var number_formatter = d3.format(",");
+    if(d == "-Infinity"){
+	  return "Data unavailable";  
+    }
     if (column.split("_").pop() == 'perc'){
-      return parseInt(d * 100, 10) + "%";
+      return parseInt(d, 10) + "%";
     } else if(column.split("_").pop() == 'val'){
       num = Math.round(d);
       return number_formatter(parseInt(d, 10));
@@ -482,7 +439,7 @@ function changeNeighborhoodData(new_data_column) {
   };
 
   var updatedLegend = d3.select("#legend").selectAll(".legend")
-      .data(jenks.slice(1).reverse());
+      .data(jenks.reverse());
 
   enterLegend = updatedLegend.enter().append("g")
     .attr("transform", function(d, i){ return "translate(0," + (i * 35) + ")"; })
@@ -505,6 +462,7 @@ function changeNeighborhoodData(new_data_column) {
 
   updatedLegend.select("rect")
     .style("fill", function(d, i) {
+      if (i == jenks.length - 1) {return defaultColor};
       if (zeroElement && jenks.length - i === 2) { return defaultColor; };
       return color_palette[color_palette.length - i - 1];
     });
@@ -513,119 +471,6 @@ function changeNeighborhoodData(new_data_column) {
 
 }
 
-function redrawPoints() {
-  $('.points-menu').children('li.selected').each(function () {
-    drawPoints($(this).children('a').attr('id'));
-  });
-}
-
-function drawPoints(type) {
-  if (!type || type === "clear") { return; }
-
-  var isSchool = type === "dcps" || type === "charters",
-      packer = sm.packer(),
-      color;
-
-  d3.json('data/' + type + '.json', function (data){
-    var poi = g.select("#points").selectAll(".poi").data(data[type], function(d) {
-      return d.name;
-    });
-
-    if (type === "charters") {
-      poi.enter().append("rect")
-        .attr("class", "poi " + type + (isSchool ? " school" : ""))
-        .attr("width", 7)
-        .attr("height", 7)
-        .attr("r", 4)
-        .attr("transform", function(d) {
-          return "translate(" + gmapProjection([d.long, d.lat]) + ")";})
-        .append("title").text(function(d){return d.name;});
-    } else {
-      poi.enter().append("circle")
-        .attr("class", "poi " + type + (isSchool ? " school" : ""))
-        .attr("r", 4)
-        .attr("transform", function(d) {
-          return "translate(" + gmapProjection([d.long, d.lat]) + ")";})
-        .append("title").text(function(d){return d.name;});
-    }
-
-    if (isSchool) { poi.on("click", displayPointsData); }
-    packMetros();
-
-
-    function displayPointsData(school) {
-      var $schools = $("#schools_panel");
-      var $panelBody = $schools.find(".panel-body");
-      var $schoolData = $panelBody.children(".school-data");
-
-      //Don"t add the school twice.
-      for (var i = 0, len = $schoolData.length; i < len; i++) {
-          if(school.name === $($schoolData[i]).find(".school-name").text()) { return; }
-      }
-
-      //Show panel on first school click.
-      if ($schools.hasClass("hide")) {
-        $("#btnPanelClose").on("click", closePanel);
-        $schools.toggleClass("hide");
-      }
-
-      //Limit number of displayed schools.
-      if ($schoolData.length === COUNT_SCHOOL_DISPLAY) {
-        $panelBody.children(":nth-child(" + COUNT_SCHOOL_DISPLAY + ")").remove();
-      }
-
-      //Add a new school to the display.
-      var $schoolDisplay = $panelBody.find("#school_data").clone();
-      $panelBody.prepend(buildNewSchool($schoolDisplay, school));
-    }
-
-    function buildNewSchool($schoolDisplay, school) {
-      $schoolDisplay.removeAttr("id").removeAttr("class").addClass("school-data");
-
-      var $schoolName = $schoolDisplay.find(".school-name");
-      $schoolName.html(school.name);
-      $schoolName.on("click", function() {
-        $schoolDisplay.remove();
-        setPanel();
-      });
-      $schoolDisplay.find(".school-enrollment").html(getDisplayValue(school.enroll_val, "enroll_val", "val"));
-      $schoolDisplay.find(".school-allocation").html(getDisplayValue(school.alloc_cur, "alloc_cur", "cur"));
-      $schoolDisplay.find(".school-math").html(getDisplayValue(school.math_perc, "math_perc", "perc"));
-      $schoolDisplay.find(".school-reading").html(getDisplayValue(school.reading_perc, "reading_perc", "perc"));
-      $schoolDisplay.find(".school-grad").html(getDisplayValue(school.grad_perc, "grad_perc", "perc"));
-      return $schoolDisplay;
-    }
-
-    // Close button click handler.
-    function closePanel(event) {
-      event.preventDefault();
-      $("#btnPanelClose").off("click", closePanel);
-      $(".school-data").remove();
-      $("#schools_panel").addClass("hide");
-    }
-
-    function setPanel() {
-      var $schools = $("#schools_panel");
-      var $panelBody = $schools.find(".panel-body");
-      if ($panelBody.children(".school-data").length === 0) {
-        $schools.addClass("hide");
-      }
-    }
-  });
-
-  function packMetros() {
-    var elements = d3.selectAll("#points .poi")[0];
-    packer.elements(elements).start();
-  }
-}
-
-function removePoints(type) {
-  if (type == "clear") {
-    g.select("#points").selectAll(".poi").remove();
-  } else {
-    g.select("#points").selectAll(".poi." + type).remove();
-  }
-}
 
 function drawChart(){
   chartSvg = d3.select(".chart").append("svg").attr("width",chartWidth).attr("height",chartHeight)
@@ -636,10 +481,10 @@ function drawChart(){
   var right_axis = d3.svg.axis().scale(scale).tickFormat("").orient("left").ticks(5);
 
   chartSvg.append("g").attr("class","axis").call(left_axis)
-    .append("text").text("Under 18").attr("text-anchor","middle").attr("x",0).attr("y",-10);
+    .append("text").text("2012-13").attr("text-anchor","middle").attr("x",0).attr("y",-10);
 
   chartSvg.append("g").attr("class","axis").attr("transform","translate(" + w + ",0)").call(right_axis)
-    .append("text").text("Over 18").attr("class","axisTitle").attr("text-anchor","middle").attr("x",0).attr("y",-10);
+    .append("text").text("2013-14").attr("class","axisTitle").attr("text-anchor","middle").attr("x",0).attr("y",-10);
 
   var ethdata = [
     {name: "white", under18: 0.23, over18: 0.32},
@@ -674,12 +519,19 @@ function drawChart(){
 }
 
 function updateChart(data){
-  var ethdata = [
+  /*var ethdata = [
     {name: "white", under18: data.pop_nothisp_white_under18_perc, over18: data.pop_nothisp_white_perc},
     {name: "black", under18: data.pop_nothisp_black_under18_perc, over18: data.pop_nothisp_black_perc},
     {name: "hispanic", under18: data.pop_hisp_under18_perc, over18: data.pop_hisp_perc},
     {name: "other", under18: data.pop_nothisp_other_under18_perc, over18: data.pop_nothisp_other_perc}
   ];
+*/	
+  var ethdata = [
+    {name: "white", under18: 0.10, over18: 0.40},
+    {name: "black", under18: 0.20, over18: 0.30},
+    {name: "hispanic", under18: 0.30, over18: 0.20},
+    {name: "other", under18: 0.40, over18: 0.10}
+  ];	
 
   chartSvg.selectAll(".ethnicity line")
     .data(ethdata)
@@ -808,9 +660,9 @@ function displayPopBox(d) {
   }
 
   var $popbox = $("#pop-info"),
-      highlighted = d ? all_data[d.properties.geo_id] : all_data.dc;
+      highlighted = d ? all_data[d.properties.gis_id] : all_data.dc;
 
-  d3.select(".neighborhood").html(highlighted.NBH_NAMES);
+  d3.select(".neighborhood").html(highlighted.state_name);
 
   var val, key, typeDef;
   $.each($popbox.find("tr"), function(k, row){
@@ -852,15 +704,15 @@ function highlightNeigborhood(d, isOverlayDraw) {
       .classed("active", centered && function(d) { return d === centered; });
 
     // if d is a neighborhood boundary and clicked
-    if (d && all_data[d.properties.geo_id]){
+    if (d && all_data[d.properties.gis_id]){
       displayPopBox(d);
       //last neighborhood to display in popBox.
-      activeId = d.properties.geo_id;
-      setVisMetric(activeData, all_data[activeId][activeData]);
+      activeId = d.properties.gis_id;
+      setVisMetric(activeData, all_data[activeId][activeData+"_"+activeYear]);
       updateChart(all_data[activeId]);
     }
   } else {
-    g.selectAll("#path" + highlightedNeighborhood.properties.NCID).classed("active", true);
+    g.selectAll("#path" + highlightedNeighborhood.properties.gis_id).classed("active", true);
     bringNeighborhoodToFront();
   }
 }
@@ -892,13 +744,16 @@ function hoverNeighborhood(d) {
   //but also keep centered neighborhood path up front
   bringNeighborhoodToFront();
 
-  if (d && all_data[d.properties.geo_id]){
+  if (d && all_data[d.properties.gis_id]){
     displayPopBox(d);
     //last neighborhood to display in popBox.
-    activeId = d.properties.geo_id;
+    activeId = d.properties.gis_id;
 
     if (activeData !== "no_neighborhood_data") {
-      setVisMetric(activeData, all_data[activeId][activeData]);
+      activeId = d.properties.gis_id;
+      console.log(activeData);
+      console.log(all_data[activeId]);
+      setVisMetric(activeData, all_data[activeId][activeData+"_"+activeYear]);
       updateChart(all_data[activeId]);
     } else {
       setVisMetric(null, null, true);
@@ -915,13 +770,13 @@ function getDisplayValue(strNum, name, typeDef) {
   var num = parseFloat(strNum);
   var number_formatter = d3.format(",");
 
-  if (isNaN(num)) { return strNum; }
+  if (isNaN(num)) { return "Data unavailable"; }
 
   name = name.toLowerCase();
 
   switch(typeDef) {
     case "perc":
-      return parseInt(Math.round(num * 100), 10) + "%";
+      return parseInt(Math.round(num), 10) + "%";
     case "val":
       num = Math.round(num);
       return number_formatter(parseInt(num, 10));

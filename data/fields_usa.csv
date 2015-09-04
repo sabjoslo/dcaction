@@ -1,2 +1,2 @@
-id,name,category,new
-total_pop,Total Population,Population,,
+id,name,type,category,new
+POPESTIMATE2014,Total Population,demographics,Population,,
