@@ -7,7 +7,7 @@ var centered;
 var svg, projection, gmapProjection, path, g, gmap;
 var activeId = 'dc',
     choropleth_data, source_data;
-var all_data = {}, activeData = "population_total";
+var all_data = {}, activeData = "total_pop";
 var min_population = 100;
 var defaultColor = "#aaa";
 var chartSvg, labels, anchors, links, label_array = [], anchor_array = [];
@@ -17,6 +17,7 @@ var w = chartWidth - chartMargin.left - chartMargin.right;
 var h = chartHeight - chartMargin.top - chartMargin.bottom;
 var scale = d3.scale.linear().domain([0, 1]).range([h, 0]);
 var ord_scale = d3.scale.ordinal().domain(["Under 18", "Over 18"]).range([0, w]);
+//gg ord_scale.domain === "2012-13", "2013-14"
 var color = d3.scale.category20();
 var dotRadius = 4;
 
@@ -172,7 +173,7 @@ function drawChoropleth(){
     });
 
     all_data.dc = {
-      NBH_NAMES: "United States of America",
+      NAME: "United States of America",
       total_pop: 619371,
       //population_under_18_val: 105291,
       //single_mother_families_perc: 0.469,
@@ -343,7 +344,7 @@ function populateNavPanel(data) {
 
     $menu.empty();
 
-    if (type === 'neighborhood') {
+    if (type === 'demographics') {
       _.chain(fields).groupBy('category').each(function (fields, category) {
         $menu.append(categoryTemplate(category));
         _.forEach(fields, function (field) {
@@ -512,7 +513,7 @@ function changeNeighborhoodData(new_data_column) {
   updatedLegend.exit().remove();
 
 }
-
+/*
 function redrawPoints() {
   $('.points-menu').children('li.selected').each(function () {
     drawPoints($(this).children('a').attr('id'));
@@ -626,7 +627,9 @@ function removePoints(type) {
     g.select("#points").selectAll(".poi." + type).remove();
   }
 }
+*/
 
+/*
 function drawChart(){
   chartSvg = d3.select(".chart").append("svg").attr("width",chartWidth).attr("height",chartHeight)
     .append("g")
@@ -699,6 +702,7 @@ function updateChart(data){
 
   redrawLabels();
 }
+*/
 
 function drawLabels(data){
   label_array = [];
@@ -810,7 +814,7 @@ function displayPopBox(d) {
   var $popbox = $("#pop-info"),
       highlighted = d ? all_data[d.properties.geo_id] : all_data.dc;
 
-  d3.select(".neighborhood").html(highlighted.NBH_NAMES);
+  d3.select(".neighborhood").html(highlighted.NAME);
 
   var val, key, typeDef;
   $.each($popbox.find("tr"), function(k, row){
@@ -860,7 +864,7 @@ function highlightNeigborhood(d, isOverlayDraw) {
       updateChart(all_data[activeId]);
     }
   } else {
-    g.selectAll("#path" + highlightedNeighborhood.properties.NCID).classed("active", true);
+    g.selectAll("#path" + highlightedNeighborhood.properties.STATE).classed("active", true);
     bringNeighborhoodToFront();
   }
 }
