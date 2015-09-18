@@ -168,7 +168,7 @@ function drawChoropleth(){
     choropleth_data = choropleth;
     source_data = source;
     choropleth_data.forEach(function(d) {
-      all_data[d.geo_id] = d;
+      all_data[d.STATE] = d;
       	  choropleth_data[d.geo_id] = +d.total_pop;
     });
 
@@ -295,12 +295,12 @@ function drawChoropleth(){
           .data(dc.features)
           .enter().append("path")
           .attr("d", path)
-          .attr("id", function (d) { return "path" + d.properties.STATE; })
+          .attr("id", function (d) { return "path" + d.properties.geo_id; })
           .attr("class", "nbhd")
           .on("mouseover", hoverNeighborhood)
           .on("mouseout", function () {
             if ($("path.active").length === 0) {
-              activeId = 'dc copy';
+              activeId = 'dc';
               $("#visualized-measure").text("");
               displayPopBox();
             }
@@ -812,7 +812,7 @@ function displayPopBox(d) {
   }
 
   var $popbox = $("#pop-info"),
-      highlighted = d ? all_data[d.properties.geo_id] : all_data.dc;
+      highlighted = d ? all_data[d.properties.STATE] : all_data.dc;
 
   d3.select(".neighborhood").html(highlighted.NAME);
 
@@ -859,7 +859,7 @@ function highlightNeigborhood(d, isOverlayDraw) {
     if (d && all_data[d.properties.geo_id]){
       displayPopBox(d);
       //last neighborhood to display in popBox.
-      activeId = d.properties.geo_id;
+      activeId = d.properties.STATE;
       setVisMetric(activeData, all_data[activeId][activeData]);
       //updateChart(all_data[activeId]);
     }
@@ -899,7 +899,7 @@ function hoverNeighborhood(d) {
   if (d && all_data[d.properties.geo_id]){
     displayPopBox(d);
     //last neighborhood to display in popBox.
-    activeId = d.properties.geo_id;
+    activeId = d.properties.STATE;
 
     if (activeData !== "no_neighborhood_data") {
       setVisMetric(activeData, all_data[activeId][activeData]);
