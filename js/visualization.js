@@ -157,8 +157,8 @@ function drawChoropleth(){
 
     //clean choropleth data for display.
     /*original
-    /choropleth_data = choropleth;
-    /source_data = source;
+    choropleth_data = choropleth;
+    source_data = source;
     /choropleth_data.forEach(function(d) {
       /all_data[d.gis_id] = d;
       /choropleth_data[d.gis_id] = +d.population_total;
@@ -859,7 +859,7 @@ function highlightNeigborhood(d, isOverlayDraw) {
     if (d && all_data[d.properties.geo_id]){
       displayPopBox(d);
       //last neighborhood to display in popBox.
-      activeId = d.properties.STATE;
+      activeId = d.properties.NAME;
       setVisMetric(activeData, all_data[activeId][activeData]);
       //updateChart(all_data[activeId]);
     }
