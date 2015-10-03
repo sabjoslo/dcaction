@@ -1,7 +1,7 @@
 # This script requires the following ruby gems:
 #   rubyXL, nokogiri
 #
-
+=begin
 require 'csv'
 require 'json'
 require 'rubyXL'
@@ -27,6 +27,7 @@ sheet.shift # remove first row
 
 sheet.each do |row|
   tract_id, nbhd_id = row.map(&:to_s)
+  =end
 
   if crosswalk.include? nbhd_id
     crosswalk[nbhd_id][tract_id] = 1
