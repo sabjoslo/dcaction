@@ -158,7 +158,14 @@ function drawChoropleth(){
     //clean choropleth data for display.
     
     choropleth_data = choropleth;
+    /*
+    choropleth.csv
+    SUMLEV,REGION,DIVISION,STATE,NAME,POPESTIMATE2014,POPEST18PLUS2014,PCNT_POPSEST18PLUS
+    */
     source_data = source;
+    /*source_usa.csv
+    layer,source,url
+    */
     choropleth_data.forEach(function(d) {
       all_data[d.STATE] = d;
       	  choropleth_data[d.geo_id] = +d.total_pop;
